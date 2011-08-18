@@ -107,7 +107,7 @@ will be the string @racket["oh no!"].
 
 
 @subsection{Structures}
-The return value for the evaluation functions in this libarary
+The return value for the evaluation functions in this library
 are instances of the @racket[evaluated] structure.
 @defstruct[evaluated ([stdout string]
                       [value string?]
