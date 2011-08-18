@@ -4,7 +4,10 @@
                      racket/base))
 @author+email["Danny Yoo" "dyoo@hashcollision.org"]
 
-@title{browser-evaluate: evaluate JavaScript expressions in the browser}
+@title{browser-evaluate: evaluate JavaScript expressions in the browser through Racket}
+
+@centered{@smaller{Source code can be found at:
+@url{https://github.com/dyoo/browser-evaluate}.}}
 
 
 
@@ -15,13 +18,15 @@ from that evaluation back into Racket.
 
 
 
-For example, evaluating the following:
+As a simple example, evaluating the following:
 @codeblock|{
 #lang racket/base
 (require (planet dyoo/browser-evaluate))
 (simple-js-evaluate "alert('hello world!');")
             }|
 should bring up a browser window in which an alert dialog should display.
+The library depends on the browser to do the JavaScript evaluation, and 
+sends values back and forth between the browser and Racket.
 
 
 For more fine-grained control over evaluation, you can use @racket[js-evaluate], which
@@ -52,30 +57,7 @@ stucture whose @racket[evaluate-value] will be @racket[3628800].
 @section{API}
 @defmodule/this-package[main]
 
-The return value for the evaluation functions in this libarary
-are instances of the @racket[evaluated] structure.
-@defstruct[evaluated ([stdout string]
-                      [value string?]
-                      [t number]
-                      [browser string?])]{
-@racket[value] represents the value returned by a use of @litchar{$SUCC}.
-@racket[t] represents the amount of time in milliseconds that evaluation took.
-@racket[browser] represents the browser string.
 
-The @racket[stdout] field is currently underdocumented.
-    }
-
-
-If the JavaScript code signals an error (with a use of @litchar{$FAIL}), then
-an @racket[error-happened] structure will be raised to the Racket caller.
-@defstruct[(error-happened exn:fail) ([message string?]
-                                      [continuation-marks continuation-mark-set?]
-                                      [t number?])]{}
-
-
-                                                   
-
-                                                   
 
 @defproc[(simple-js-evaluate [str string?]) evaluated?]{                                                       
 Evaluates a JavaScript string.  Returns an @racket[evaluated] structure that records
@@ -124,8 +106,34 @@ will be the string @racket["oh no!"].
 
 
 
+@subsection{Structures}
+The return value for the evaluation functions in this libarary
+are instances of the @racket[evaluated] structure.
+@defstruct[evaluated ([stdout string]
+                      [value string?]
+                      [t number]
+                      [browser string?])]{
+@racket[value] represents the value returned by a use of @litchar{$SUCC}.
+@racket[t] represents the amount of time in milliseconds that evaluation took.
+@racket[browser] represents the browser string.
+
+The @racket[stdout] field is currently underdocumented.
+    }
 
 
+If the JavaScript code signals an error (with a use of @litchar{$FAIL}), then
+an @racket[error-happened] structure will be raised to the Racket caller.
+@defstruct[(error-happened exn:fail) ([message string?]
+                                      [continuation-marks continuation-mark-set?]
+                                      [t number?])]{}
+
+
+                                                   
+
+                                                   
+
+
+@subsection{Low-level API}
 @defproc[(make-evaluate [program-transformer
                          (any/c output-port . -> . void)])
          (any/c -> (values string number))]{
@@ -138,12 +146,19 @@ the thunk should return a function that consumes three values, corresponding
 to success, failure, and other parameters to evaluation.
 
 For example:
-
-@racketblock[(make-evaluate (lambda (program op)
-                          (fprintf op "(function() {
-                                            return function(success, fail, params) {
-                                                       success('ok');
-                                            }})")))]
-
-is an evaluator that will always give back 'ok' to the caller.
-}
+@codeblock|{
+#lang racket/base
+(require (planet dyoo/browser-evaluate))
+(define my-eval
+  (make-evaluate 
+    (lambda (program op)
+      (fprintf op #<<EOF
+(function() {
+   return function(success, fail, params) {
+             success('ok');
+   }})
+EOF
+))))
+            }|
+defines an evaluator @racket[my-eval] that will always give back
+@racket["ok"] as the value of the evaluation.}
