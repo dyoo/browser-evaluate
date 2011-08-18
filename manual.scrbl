@@ -48,7 +48,7 @@ EOF
 ))
             }|
 When this program executes, @racket[result] will be bound to an @racket[evaluated]
-stucture whose @racket[evaluate-value] will be @racket[3628800].
+stucture whose @racket[evaluated-value] will be @racket[3628800].
 
 
 
